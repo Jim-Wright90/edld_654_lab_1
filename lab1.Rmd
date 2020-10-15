@@ -91,21 +91,17 @@ cv_splits$splits[[8]]
 cv_splits$splits[[9]]
 cv_splits$splits[[10]]
 
+str(cv_splits)
 
 cv_splits_2 <- cv_splits %>% 
-  mutate(analysis_n = map(cv_splits, ~nrow(analysis(splits)))),
-         assessment_n = map(cv_splits),
-         analysis_p = (analysis_n / splits),
-         assessment_p = (analysis_p / splits),
-         sped_p = map(cv_splits, sp_ed_fg)
-         
+  mutate(analysis_n = map_dbl(splits, ~nrow(analysis(.x))),
+         assessment_n = map_dbl(splits, ~nrow(assessment(.x))),
+         analysis_p = analysis_n / (analysis_n + assessment_n),
+         assessment_p = assessment_n / (analysis_n + assessment_n),
+         sped_p = map2?)
 
-cv_splits_3 <- cv_splits %>% 
-  mutate(analysis_n = 127863,
-         assessment_n = 14207,
-         analysis_p = )
 
-cv_splits_3
+
                           
 ```
 
