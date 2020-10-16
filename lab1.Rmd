@@ -97,8 +97,9 @@ cv_splits_2 <- cv_splits %>%
   mutate(analysis_n = map_dbl(splits, ~nrow(analysis(.x))),
          assessment_n = map_dbl(splits, ~nrow(assessment(.x))),
          analysis_p = analysis_n / (analysis_n + assessment_n),
-         assessment_p = assessment_n / (analysis_n + assessment_n),
-         sped_p = map2?)
+         assessment_p = assessment_n / (analysis_n + assessment_n))
+
+# need to add last column for sped_ed_fg variable. Maybe map_lgl() or map_chr() gets us there
 
 
 
@@ -108,9 +109,23 @@ cv_splits_2 <- cv_splits %>%
 ### 5. Please demonstrate that that there are **no** common values in the `id` columns of the `assessment` data between `Fold01` & `Fold02`, and `Fold09` & `Fold10` (of your 10-fold cross-validation object).
 
 ```{r}
+cv_splits_2
 
+cv_splits_2$splits[[1]] %>% 
+  assessment()
 
+cv_splits_2$splits[[2]] %>% 
+  assessment()
 
+# No common values between folds 1 and 2
+
+cv_splits_2$splits[[9]] %>% 
+  assessment()
+
+cv_splits_2$splits[[10]] %>% 
+  assessment()
+
+# No common values between folds 9 and 10
 ```
 
 ### 6. Try to answer these next questions without running similar code on real data.
@@ -118,28 +133,64 @@ cv_splits_2 <- cv_splits %>%
 For the following code `vfold_cv(fictional_train, v = 20)`:
 
 * What is the proportion in the analysis set for each fold?
+
+Answer: The analysis set serves as 95% for each fold. 
+
 * What is the proportion in the assessment set for each fold?
+
+Answer: The assessment set serves as 5% for each fold. 
 
 ### 7. Use Monte Carlo CV to resample the training data with 20 resamples and .30 of each resample reserved for the assessment sets.
 
 ```{r}
 set.seed(3000)
-
+(mc_splits <- mc_cv(data_train, 
+                    prop = .70,
+                    times = 20))
 
 ```
 
 ### 8. Please demonstrate that that there **are** common values in the `id` columns of the `assessment` data between `Resample 8` & `Resample 12`, and `Resample 2` & `Resample 20`in your MC CV object.
 
 ```{r}
+nrow(data_train)
 
+str(mc_splits)
+str(mc_splits$id)
+
+mc_splits$splits[[8]]
+mc_splits$id[[8]]
+mc_splits$splits[[12]]
+
+assessment(mc_splits$splits[[8]])
+assessment(mc_splits$splits[[12]])
+
+# The values of 21 and 22 are common values between Resamples 8 and 12
+
+
+
+assessment(mc_splits$splits[[2]])
+assessment(mc_splits$splits[[20]])
+
+# The values of 5 and 7 are common values between Resamples 2 and 20
 
 ```
 
 ### 9. You plan on doing bootstrap resampling with a training set with *n* = 500.
 
 * What is the sample size of an analysis set for a given bootstrap resample?
+
+Answer: 63.21% of 500 = approximately 317 
+
 * What is the sample size of an assessment set for a given bootstrap resample?
+
+Answer: approximately 183
+
 * If each row was selected only once for an analysis set:
+
+Jim: These last two confuse me. Looking at the image presented in the slides when there is one round of sampling, it appears 40% would end up in the analysis set and 30% in the assessment set, but I'm not sure that makes much sense?
+
   + what would be the size of the analysis set?
+  
   + and what would be the size of the assessment set?
   
