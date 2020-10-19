@@ -37,14 +37,9 @@ set.seed(3000)
 data_train <- training(data_split)
 data_test <- testing(data_split)
 
-data_split %>% training() %>% nrow() /nrow(data)
-
-names(data_split)
-
 class(data_split)
-class(data)
-
-
+class(data_train)
+class(data_test)
 
 ```
 
@@ -52,9 +47,11 @@ class(data)
 
 ```{r}
 set.seed(3000)
-(data_split70 <- initial_split(data, prop = .70))
 
-data_split70 %>% training() %>% nrow() / nrow(data)
+data_split %>% training() %>% nrow() /nrow(data)
+
+data_split %>% testing() %>% nrow() /nrow(data)
+
 ```
 
 ### 3. *k*-fold cross-validation
