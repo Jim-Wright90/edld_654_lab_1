@@ -60,7 +60,7 @@ Use 10-fold cross-validation to resample the training data.
 
 ```{r, resample}
 set.seed(3000)
-(cv_splits <- vfold_cv(data_train))
+(cv_splits <- vfold_cv(data_train, v = 10))
 
 ```
 
@@ -78,15 +78,6 @@ cv_splits$splits[[1]] %>%
   analysis() %>% 
   nrow()
 
-cv_splits$splits[[2]]
-cv_splits$splits[[3]]
-cv_splits$splits[[4]]
-cv_splits$splits[[5]]
-cv_splits$splits[[6]]
-cv_splits$splits[[7]]
-cv_splits$splits[[8]]
-cv_splits$splits[[9]]
-cv_splits$splits[[10]]
 
 str(cv_splits)
 
@@ -96,11 +87,21 @@ cv_splits_2 <- cv_splits %>%
          analysis_p = analysis_n / (analysis_n + assessment_n),
          assessment_p = assessment_n / (analysis_n + assessment_n))
 
-# need to add last column for sped_ed_fg variable. Maybe map_lgl() or map_chr() gets us there
 
+library(janitor)
 
+sped_p_analysis <- map(cv_splits$splits, ~analysis(.x) %>% 
+                         janitor::tabyl(sp_ed_fg)) %>% 
+  map_dbl(~(.x)$percent[[2]])
 
-                          
+sped_p_assessment <- map(cv_splits$splits, ~assessment(.x) %>% 
+                           janitor::tabyl(sp_ed_fg)) %>% 
+  map_dbl(~(.x)$percent[[2]])
+
+cv_splits_2 <- cv_splits_2 %>% 
+  cbind(cv_splits_2, sped_p_analysis, sped_p_assessment)
+
+head(cv_splits_2)
 ```
 
 ### 5. Please demonstrate that that there are **no** common values in the `id` columns of the `assessment` data between `Fold01` & `Fold02`, and `Fold09` & `Fold10` (of your 10-fold cross-validation object).
@@ -114,6 +115,10 @@ cv_splits_2$splits[[1]] %>%
 cv_splits_2$splits[[2]] %>% 
   assessment()
 
+nrow(inner_join(assessment(cv_splits_2$splits[[1]]),
+                assessment(cv_splits_2$splits[[2]]),
+                by = "id"))
+
 # No common values between folds 1 and 2
 
 cv_splits_2$splits[[9]] %>% 
@@ -121,6 +126,10 @@ cv_splits_2$splits[[9]] %>%
 
 cv_splits_2$splits[[10]] %>% 
   assessment()
+
+nrow(inner_join(assessment(cv_splits_2$splits[[9]]),
+                assessment(cv_splits_2$splits[[10]]),
+                by = "id"))
 
 # No common values between folds 9 and 10
 ```
@@ -162,12 +171,20 @@ mc_splits$splits[[12]]
 assessment(mc_splits$splits[[8]])
 assessment(mc_splits$splits[[12]])
 
+nrow(inner_join(assessment(mc_splits$splits[[8]]),
+                assessment(mc_splits$splits[[12]]),
+                by = "id"))
+
 # The values of 21 and 22 are common values between Resamples 8 and 12
 
 
 
 assessment(mc_splits$splits[[2]])
 assessment(mc_splits$splits[[20]])
+
+nrow(inner_join(assessment(mc_splits$splits[[2]]),
+                assessment(mc_splits$splits[[20]]),
+                by = "id"))
 
 # The values of 5 and 7 are common values between Resamples 2 and 20
 
