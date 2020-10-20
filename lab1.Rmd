@@ -152,14 +152,16 @@ nrow(inner_join(assessment(mc_splits$splits[[2]]),
 ### 9. You plan on doing bootstrap resampling with a training set with *n* = 500.
 
 * 1) What is the sample size of an analysis set for a given bootstrap resample?
-Answer: 63.21% of 500 = approximately 317 
+Answer: 500 - during each split, all rows go into the analysis set. 
 * 2) What is the sample size of an assessment set for a given bootstrap resample?
 Answer: approximately 183
 * 3) If each row was selected only once for an analysis set:
 
   + what would be the size of the analysis set?
+  Answer: 500
   
   + and what would be the size of the assessment set?
+  Answer: approximately 183
   
 Jim: These last two confuse me. Looking at the image presented in the slides when there is one round of sampling, it appears 40% would end up in the analysis set and 30% in the assessment set, but I'm not sure that makes much sense?
 
