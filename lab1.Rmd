@@ -18,12 +18,15 @@ knitr::opts_chunk$set(echo = FALSE,
 
 library(tidyverse)
 library(tidymodels)
+
 ```
 
 ### Read in the `train.csv` data.
 
 ```{r, data}
 data <- read_csv(here::here("data", "train.csv"))
+
+data <- dplyr::sample_frac(data, size = 0.02)
 ```
 
 ### 1. Initial Split
@@ -32,6 +35,7 @@ Split the data into a training set and a testing set as two named objects. Produ
 
 ```{r, initial_split}
 set.seed(3000)
+
 (data_split <- initial_split(data))
 
 data_train <- training(data_split)
@@ -60,7 +64,8 @@ Use 10-fold cross-validation to resample the training data.
 
 ```{r, resample}
 set.seed(3000)
-(cv_splits <- vfold_cv(data_train, v = 10))
+
+(cv_splits <- vfold_cv(data_train))
 
 ```
 
@@ -72,14 +77,6 @@ set.seed(3000)
 * *sped_p* = the proportion of students receiving special education services (`sp_ed_fg`) in the analysis and assessment sets for each fold
 
 ```{r, purrr}
-rm(data)
-
-cv_splits$splits[[1]] %>% 
-  analysis() %>% 
-  nrow()
-
-
-str(cv_splits)
 
 cv_splits_2 <- cv_splits %>% 
   mutate(analysis_n = map_dbl(splits, ~nrow(analysis(.x))),
@@ -87,51 +84,33 @@ cv_splits_2 <- cv_splits %>%
          analysis_p = analysis_n / (analysis_n + assessment_n),
          assessment_p = assessment_n / (analysis_n + assessment_n))
 
-
-library(janitor)
-
 sped_p_analysis <- map(cv_splits$splits, ~analysis(.x) %>% 
-                         janitor::tabyl(sp_ed_fg)) %>% 
+                           janitor::tabyl(sp_ed_fg)) %>% 
   map_dbl(~(.x)$percent[[2]])
 
 sped_p_assessment <- map(cv_splits$splits, ~assessment(.x) %>% 
                            janitor::tabyl(sp_ed_fg)) %>% 
   map_dbl(~(.x)$percent[[2]])
 
-cv_splits_2 <- cv_splits_2 %>% 
-  cbind(cv_splits_2, sped_p_analysis, sped_p_assessment)
+sped_p <- sped_p_analysis/sped_p_assessment
+
+cv_splits_2$sped_p <- sped_p
 
 head(cv_splits_2)
+                          
 ```
 
 ### 5. Please demonstrate that that there are **no** common values in the `id` columns of the `assessment` data between `Fold01` & `Fold02`, and `Fold09` & `Fold10` (of your 10-fold cross-validation object).
 
 ```{r}
-cv_splits_2
-
-cv_splits_2$splits[[1]] %>% 
-  assessment()
-
-cv_splits_2$splits[[2]] %>% 
-  assessment()
 
 nrow(inner_join(assessment(cv_splits_2$splits[[1]]),
                 assessment(cv_splits_2$splits[[2]]),
                 by = "id"))
 
-# No common values between folds 1 and 2
-
-cv_splits_2$splits[[9]] %>% 
-  assessment()
-
-cv_splits_2$splits[[10]] %>% 
-  assessment()
-
 nrow(inner_join(assessment(cv_splits_2$splits[[9]]),
                 assessment(cv_splits_2$splits[[10]]),
                 by = "id"))
-
-# No common values between folds 9 and 10
 ```
 
 ### 6. Try to answer these next questions without running similar code on real data.
@@ -159,52 +138,41 @@ set.seed(3000)
 ### 8. Please demonstrate that that there **are** common values in the `id` columns of the `assessment` data between `Resample 8` & `Resample 12`, and `Resample 2` & `Resample 20`in your MC CV object.
 
 ```{r}
-nrow(data_train)
-
-str(mc_splits)
-str(mc_splits$id)
-
-mc_splits$splits[[8]]
-mc_splits$id[[8]]
-mc_splits$splits[[12]]
-
-assessment(mc_splits$splits[[8]])
-assessment(mc_splits$splits[[12]])
 
 nrow(inner_join(assessment(mc_splits$splits[[8]]),
                 assessment(mc_splits$splits[[12]]),
                 by = "id"))
 
-# The values of 21 and 22 are common values between Resamples 8 and 12
-
-
-
-assessment(mc_splits$splits[[2]])
-assessment(mc_splits$splits[[20]])
-
 nrow(inner_join(assessment(mc_splits$splits[[2]]),
                 assessment(mc_splits$splits[[20]]),
                 by = "id"))
-
-# The values of 5 and 7 are common values between Resamples 2 and 20
 
 ```
 
 ### 9. You plan on doing bootstrap resampling with a training set with *n* = 500.
 
-* What is the sample size of an analysis set for a given bootstrap resample?
-
+* 1) What is the sample size of an analysis set for a given bootstrap resample?
 Answer: 63.21% of 500 = approximately 317 
-
-* What is the sample size of an assessment set for a given bootstrap resample?
-
+* 2) What is the sample size of an assessment set for a given bootstrap resample?
 Answer: approximately 183
-
-* If each row was selected only once for an analysis set:
-
-Jim: These last two confuse me. Looking at the image presented in the slides when there is one round of sampling, it appears 40% would end up in the analysis set and 30% in the assessment set, but I'm not sure that makes much sense?
+* 3) If each row was selected only once for an analysis set:
 
   + what would be the size of the analysis set?
   
   + and what would be the size of the assessment set?
+  
+Jim: These last two confuse me. Looking at the image presented in the slides when there is one round of sampling, it appears 40% would end up in the analysis set and 30% in the assessment set, but I'm not sure that makes much sense?
+
+Claire: for the bootstrap my understanding is, during each split, all the rows go into analysis set (see the code below) so the sample size will be 500 for question 1); for the question 2) I think you're right, it would be approximately 183 but it depends; for the question 3), I am confused as well since the answer would be no difference with 1) and 2)?
+
+```{r}
+nrow(data)
+boot_splits <- bootstraps(data)
+boot_splits$splits[[1]]
+
+boot_splits_once <- bootstraps(data, times = 1)
+boot_splits_once$splits[[1]]
+
+```
+
   
